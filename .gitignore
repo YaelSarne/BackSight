@@ -13,3 +13,13 @@
 *.ts
 *.mts
 *.m2ts
+
+# YOLO model files and outputs
+*.pt
+*.pth
+*.onnx
+*.engine
+runs/
+results/
+models/
+weights/
