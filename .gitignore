@@ -35,6 +35,24 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.venv/
+.conda/
+conda_env/
+miniconda/
+anaconda/
+miniforge/
+mambaforge/
+pipenv/
+poetry/
+pyenv/
+pixi/
+virtualenv/
+.venvs/
+site/
+dist/
+build/
+*.egg-info/
+.eggs/
 
 # macOS
 .DS_Store
