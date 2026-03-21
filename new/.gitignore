@@ -1,0 +1,17 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Environments
+.venv/
+env/
+venv/
+
+# Video & Large files
+*.mp4
+*.pcap
+pose_landmarker.task
+
+# Project specific
+alert.wav
+suspect_*.jpg
