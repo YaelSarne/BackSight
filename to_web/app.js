@@ -114,6 +114,10 @@ async function processFrame() {
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
 
+    //const center = {
+    //    x: nose.x * canvas.width,
+    //    y: nose.y * canvas.height
+   // };
     const center = {
         x: ((leftShoulder.x + rightShoulder.x) / 2) * canvas.width,
         y: ((leftShoulder.y + rightShoulder.y) / 2) * canvas.height
