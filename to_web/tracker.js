@@ -1,9 +1,9 @@
 export class TrackManager {
   constructor({
     alertL1 = 10,
-    alertL2 = 60,
-    gracePeriod = 10,
-    maxMatchDistance = 120
+    alertL2 = 30,
+    gracePeriod = 20, // seconds to keep "lost" tracks before removing
+    maxMatchDistance = 200 // max distance in pixels to consider a detection as the same person
   } = {}) {
     this.ALERT_L1 = alertL1;
     this.ALERT_L2 = alertL2;
@@ -128,9 +128,14 @@ export class TrackManager {
 
     for (const [trackId, track] of Array.from(this.tracks.entries())) {
       const timeMissing = now - track.lastSeen;
-      if (timeMissing > this.GRACE_PERIOD) {
+      if (timeMissing > 0.5 && duration < 1.0) {
         this.tracks.delete(trackId);
-      }
+        continue;
+        }
+
+        if (timeMissing > this.GRACE_PERIOD) {
+        this.tracks.delete(trackId);
+        }
     }
   }
 }

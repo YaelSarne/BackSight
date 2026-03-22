@@ -2,17 +2,20 @@ export class Visualizer {
   static drawDashboard(ctx, canvas, tracker) {
     const h = canvas.height;
     const w = canvas.width;
-    const sidebarW = 320;
+
+    const isMobile = w < 600;
+    const sidebarW = isMobile ? 150 : 320;
+
     const now = performance.now() / 1000;
 
-    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.fillRect(w - sidebarW, 0, sidebarW, h);
 
     ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.fillText("BACKSIGHT MONITOR", w - sidebarW + 20, 30);
+    ctx.font = isMobile ? "12px Arial" : "20px Arial";
+    ctx.fillText("MONITOR", w - sidebarW + 10, 25);
 
-    let y = 70;
+    let y = 50;
 
     for (const [trackId, track] of tracker.tracks.entries()) {
       const duration = Math.floor(now - track.startTime);

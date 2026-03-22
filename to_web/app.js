@@ -111,9 +111,12 @@ async function processFrame() {
     if (!bbox) continue;
 
     const nose = landmarks[0];
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+
     const center = {
-        x: nose.x * canvas.width,
-        y: nose.y * canvas.height
+        x: ((leftShoulder.x + rightShoulder.x) / 2) * canvas.width,
+        y: ((leftShoulder.y + rightShoulder.y) / 2) * canvas.height
     };
 
     detections.push({ landmarks, bbox, center });
