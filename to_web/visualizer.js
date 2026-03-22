@@ -5,46 +5,43 @@ export class Visualizer {
 
     const isMobile = w < 600;
     const sidebarW = isMobile ? 150 : 320;
-
     const now = performance.now() / 1000;
 
     ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.fillRect(w - sidebarW, 0, sidebarW, h);
 
     ctx.fillStyle = "white";
-    ctx.font = isMobile ? "12px Arial" : "20px Arial";
-    ctx.fillText("MONITOR", w - sidebarW + 10, 25);
+    ctx.font = isMobile ? "bold 14px Arial" : "bold 18px Arial";
+    ctx.fillText("LIVE MONITOR", w - sidebarW + 15, 30);
 
-    let y = 50;
+    let y = 60;
 
     for (const [trackId, track] of tracker.tracks.entries()) {
       const duration = Math.floor(now - track.startTime);
+      const timeSinceSeen = now - track.lastSeen;
 
-      let color = "lime";
-      let statusText = "VISIBLE";
-
-      if (track.visible) {
-        color = duration >= tracker.ALERT_L2 ? "red" : duration >= tracker.ALERT_L1 ? "orange" : "lime";
-      } else {
-        const remaining = Math.max(0, Math.floor(tracker.GRACE_PERIOD - (now - track.lastSeen)));
-        color = "gray";
-        statusText = `LOST (Reset in ${remaining}s)`;
-      }
-
+      let color = track.visible ? "lime" : "#777";
+      
+      if (track.visible && duration >= tracker.ALERT_L2) color = "red"; // ALERT_L2 reached
+      else if (track.visible && duration >= tracker.ALERT_L1) color = "orange";  // ALERT_L1 reached
+    
       ctx.fillStyle = color;
-      ctx.font = "16px Arial";
-      ctx.fillText(`PERSON ${trackId} | ${duration}s`, w - sidebarW + 20, y);
+      ctx.font = isMobile ? "12px Arial" : "14px Arial";
 
-      ctx.font = "14px Arial";
-      ctx.fillText(statusText, w - sidebarW + 20, y + 20);
+      const statusText = track.visible ? "VISIBLE" : `LOST (${Math.floor(tracker.GRACE_PERIOD - timeSinceSeen)}s)`;
+    
+      ctx.fillText(`PERSON ${trackId} | ${duration}s`, w - sidebarW + 15, y);
+      ctx.font = isMobile ? "10px Arial" : "11px Arial";
+      ctx.fillText(statusText, w - sidebarW + 15, y + 18);
 
       ctx.strokeStyle = "#333";
       ctx.beginPath();
-      ctx.moveTo(w - sidebarW + 20, y + 35);
-      ctx.lineTo(w - 20, y + 35);
+      ctx.moveTo(w - sidebarW + 10, y + 30);
+      ctx.lineTo(w - 10, y + 30);
       ctx.stroke();
 
-      y += 60;
+      y += 50;
+      if (y > h - 40) break;
     }
   }
 

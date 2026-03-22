@@ -124,17 +124,22 @@ export class TrackManager {
   }
 
   cleanupInactive() {
+    // remove tracks that have been "lost" for too long or were very short-lived
     const now = performance.now() / 1000;
 
     for (const [trackId, track] of Array.from(this.tracks.entries())) {
       const timeMissing = now - track.lastSeen;
+      const duration = now - track.startTime;
+
+      // remove if a track was only visible for a very short time and then lost
       if (timeMissing > 0.5 && duration < 1.0) {
         this.tracks.delete(trackId);
         continue;
         }
 
+        // remove if a track has been lost for too long
         if (timeMissing > this.GRACE_PERIOD) {
-        this.tracks.delete(trackId);
+            this.tracks.delete(trackId);
         }
     }
   }
