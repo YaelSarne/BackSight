@@ -41,7 +41,10 @@ async function createPoseLandmarker() {
       modelAssetPath: "./pose_landmarker.task"
     },
     runningMode: "VIDEO",
-    numPoses: 4
+    numPoses: 4,
+    minPoseDetectionConfidence: 0.6, 
+    minPosePresenceConfidence: 0.6,
+    minTrackingConfidence: 0.6       
   });
 }
 
@@ -173,7 +176,7 @@ async function startApp() {
       alertL1: 10,
       alertL2: 60,
       gracePeriod: 10,
-      maxMatchDistance: 120
+      maxMatchDistance: 200
     });
 
     if (!poseLandmarker) {

@@ -3,7 +3,7 @@ export class TrackManager {
     alertL1 = 10,
     alertL2 = 30,
     gracePeriod = 20, // seconds to keep "lost" tracks before removing
-    maxMatchDistance = 200 // max distance in pixels to consider a detection as the same person
+    maxMatchDistance = 250 // max distance in pixels to consider a detection as the same person
   } = {}) {
     this.ALERT_L1 = alertL1;
     this.ALERT_L2 = alertL2;
@@ -12,13 +12,20 @@ export class TrackManager {
 
     this.tracks = new Map(); // trackId -> track
     this.nextTrackId = 0;
-    this.activeTrackIds = new Set();
   }
 
   static bboxFromLandmarks(landmarks, frameWidth, frameHeight) {
-    const visible = landmarks.filter(lm => (lm.visibility ?? 1) > 0.5);
-    if (!visible.length) return null;
+    // filter out landmarks that are not visible enough to avoid outliers messing up the bbox
 
+    // calculate average visibility of key landmarks (nose, eyes, ears) to determine if we have a good detection
+    const keyPoints = [0, 11, 12, 23, 24];
+    const avgVisibility = keyPoints.reduce((sum, i) => sum + (landmarks[i]?.visibility || 0), 0) / keyPoints.length; 
+
+    if (avgVisibility < 0.55) return null;
+    const visible = landmarks.filter(lm => (lm.visibility ?? 1) > 0.5);
+    if (visible.length < 10) return null;
+
+    // calculate bbox from visible landmarks
     const xs = visible.map(lm => lm.x);
     const ys = visible.map(lm => lm.y);
 
@@ -44,53 +51,59 @@ export class TrackManager {
   }
 
   beginFrame() {
-    this.activeTrackIds.clear();
+    // initialize active tracks set for this frame
+    for (const track of this.tracks.values()) {
+      track.visible = false;
+    }
   }
 
   matchDetectionsToTracks(detections) {
+    // match detections to existing tracks based on proximity, and create new tracks for unmatched detections
     const now = performance.now() / 1000;
     const matches = [];
+    const usedDetectionIndices = new Set(); // to track which detections have been matched
 
-    const unusedTrackIds = new Set(this.tracks.keys());
+    // first pass: try to match each existing track to the closest detection
+    for (const [trackId, track] of this.tracks.entries()) {
+      if (now - track.lastSeen > this.GRACE_PERIOD) continue; // skip tracks that have been lost for too long
+      let bestDetIdx = -1;
+      const timeSinceSeen = now - track.lastSeen;
+      let currentMaxDist = (timeSinceSeen > 1.0) ? this.MAX_MATCH_DISTANCE * 2 : this.MAX_MATCH_DISTANCE; // allow more leniency for tracks that have been missing for a short time
+      let minDistance = currentMaxDist;
 
-    for (const det of detections) {
-      let bestTrackId = null;
-      let bestDistance = Infinity;
-
-      for (const trackId of unusedTrackIds) {
-        const track = this.tracks.get(trackId);
-
-        // לא מתאימים track ישן מדי
-        if (now - track.lastSeen > this.GRACE_PERIOD) continue;
-
-        const dist = TrackManager.distance(det.center, track.center);
-        if (dist < bestDistance) {
-          bestDistance = dist;
-          bestTrackId = trackId;
+      // for each track, find the closest detection that hasn't been matched yet
+      for (let i = 0; i < detections.length; i++) {
+        if (usedDetectionIndices.has(i)) continue; // skip already matched detections
+        const dist = TrackManager.distance(track.center, detections[i].center); 
+        if (dist < minDistance) { // closer than previous best match
+          minDistance = dist;
+          bestDetIdx = i;
         }
       }
-
-      if (bestTrackId !== null && bestDistance <= this.MAX_MATCH_DISTANCE) {
-        const track = this.tracks.get(bestTrackId);
-
-        // עדכון track קיים
+      // found a matching detection for this track , update the track with the new detection info
+      if (bestDetIdx !== -1) { 
+        const det = detections[bestDetIdx];
         track.bbox = det.bbox;
         track.center = det.center;
         track.landmarks = det.landmarks;
         track.lastSeen = now;
         track.visible = true;
+        usedDetectionIndices.add(bestDetIdx); // mark this detection as matched
 
-        this.activeTrackIds.add(bestTrackId);
-        unusedTrackIds.delete(bestTrackId);
-
+        // add to matches for visualization
         matches.push({
-          trackId: bestTrackId,
+          trackId: trackId,
           landmarks: det.landmarks,
           bbox: det.bbox,
           duration: now - track.startTime
         });
-      } else {
-        // יצירת track חדש
+      }
+    }
+    
+    // second pass: create new tracks for any detections that weren't matched to existing tracks
+    for (let i = 0; i < detections.length; i++) {
+      if (usedDetectionIndices.has(i)) continue;
+        const det = detections[i];
         const newTrackId = this.nextTrackId++;
         this.tracks.set(newTrackId, {
           id: newTrackId,
@@ -100,24 +113,13 @@ export class TrackManager {
           startTime: now,
           lastSeen: now,
           visible: true
-        });
-
-        this.activeTrackIds.add(newTrackId);
-
-        matches.push({
-          trackId: newTrackId,
-          landmarks: det.landmarks,
-          bbox: det.bbox,
-          duration: 0
-        });
-      }
-    }
-
-    // tracks שלא נראו בפריים הזה
-    for (const [trackId, track] of this.tracks.entries()) {
-      if (!this.activeTrackIds.has(trackId)) {
-        track.visible = false;
-      }
+      });
+      matches.push({
+        trackId: newTrackId,
+        landmarks: det.landmarks,
+        bbox: det.bbox,
+        duration: 0
+      });
     }
 
     return matches;
@@ -132,7 +134,7 @@ export class TrackManager {
       const duration = now - track.startTime;
 
       // remove if a track was only visible for a very short time and then lost
-      if (timeMissing > 0.5 && duration < 1.0) {
+      if (timeMissing > 0.3 && duration < 1.5) {
         this.tracks.delete(trackId);
         continue;
         }
