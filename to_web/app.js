@@ -107,21 +107,16 @@ async function processFrame() {
 
   if (results.landmarks && results.landmarks.length > 0) {
     for (const landmarks of results.landmarks) {
-      const bbox = TrackManager.bboxFromLandmarks(
-        landmarks,
-        canvas.width,
-        canvas.height
-      );
+    const bbox = TrackManager.bboxFromLandmarks(landmarks, canvas.width, canvas.height);
+    if (!bbox) continue;
 
-      if (!bbox) continue;
+    const nose = landmarks[0];
+    const center = {
+        x: nose.x * canvas.width,
+        y: nose.y * canvas.height
+    };
 
-      const center = TrackManager.centerFromBbox(bbox);
-
-      detections.push({
-        landmarks,
-        bbox,
-        center
-      });
+    detections.push({ landmarks, bbox, center });
     }
   }
 
