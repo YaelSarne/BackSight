@@ -6,10 +6,13 @@ import { Visualizer } from '../utils/visualizer';
  * Custom hook for BackSight monitoring system
  * Handles the monitoring state, frame processing, and alert system
  */
+
 export const useMonitoring = () => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [status, setStatus] = useState("Idle");
   const alertAudioRef = useRef(null);
+
+  const sentAlertsRef = useRef({});
 
   const trackerRef = useRef(new TrackManager({
     alertL1: 10,
@@ -17,6 +20,24 @@ export const useMonitoring = () => {
     gracePeriod: 10,
     maxMatchDistance: 120
   }));
+
+  const sessionId = useRef(Date.now()).current;
+
+  // log an event to the backend when a person reaches threshold
+  const logEventToBackend = async (personId, duration, maxLevel) => {
+    const uniqueId = `${sessionId}_${personId}`;
+
+    try {
+      await fetch('http://localhost:3001/api/log-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personId, duration, maxLevel })
+      });
+      console.log(`Logged to DB: Person ${personId} reached ${maxLevel}`);
+    } catch (err) {
+      console.error("Failed to sync with backend", err);
+    }
+  };
 
   // main loop to process each video frame, detect poses, update tracks, and draw the results on the canvas
   const processFrame = async (landmarker, videoRef, canvasRef) => {
@@ -63,17 +84,28 @@ export const useMonitoring = () => {
 
       for (const match of matches) {
         let color = "lime";
-        if (match.duration >= tracker.ALERT_L2) color = "red";
-        else if (match.duration >= tracker.ALERT_L1) color = "orange";
-
-        Visualizer.drawPerson(ctx, match.bbox, match.trackId, match.duration, color);
-
-        // sound alert if the person has been present for longer than the ALERT_L2 threshold
+        let level = "NORMAL";
+        
         if (match.duration >= tracker.ALERT_L2) {
-          if (alertAudioRef.current && alertAudioRef.current.paused) {
-            alertAudioRef.current.play().catch(e => console.log("Audio play blocked"));
+          color = "red";
+          level = "L2_CRITICAL";
+          if (!sentAlertsRef.current[match.trackId]?.L2) {
+            logEventToBackend(match.trackId, Math.floor(match.duration), level);
+            if (alertAudioRef.current) {
+              alertAudioRef.current.currentTime = 0;
+              alertAudioRef.current.play().catch(e => console.log("Audio failed", e));
+            }
+            sentAlertsRef.current[match.trackId] = { ...sentAlertsRef.current[match.trackId], L2: true };
+          }
+        } else if (match.duration >= tracker.ALERT_L1) {
+          color = "orange";
+          level = "L1_WARNING";
+          if (!sentAlertsRef.current[match.trackId]?.L1) {
+            logEventToBackend(match.trackId, Math.floor(match.duration), level);
+            sentAlertsRef.current[match.trackId] = { ...sentAlertsRef.current[match.trackId], L1: true };
           }
         }
+        Visualizer.drawPerson(ctx, match.bbox, match.trackId, match.duration, color);
       }
 
       tracker.cleanupInactive();

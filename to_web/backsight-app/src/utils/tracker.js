@@ -22,7 +22,7 @@ export class TrackManager {
     const avgVisibility = keyPoints.reduce((sum, i) => sum + (landmarks[i]?.visibility || 0), 0) / keyPoints.length; 
 
     if (avgVisibility < 0.55) return null;
-    const visible = landmarks.filter(lm => (lm.visibility ?? 1) > 0.5);
+    const visible = landmarks.filter(lm => (lm.visibility ?? 1) > 0.4);
     if (visible.length < 10) return null;
 
     // calculate bbox from visible landmarks
@@ -35,6 +35,38 @@ export class TrackManager {
     const y2 = Math.floor(Math.max(...ys) * frameHeight);
 
     return { x1, y1, x2, y2 };
+  }
+
+  static getAnchorPoint(landmarks, bbox) {
+    // use a weighted average of the nose and shoulder positions to get a more stable anchor point for tracking
+    // especially when the person is partially occluded or turned away from the camera
+    const nose = landmarks[0];
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+
+    let sumX = 0, sumY = 0, weight = 0;
+
+    if (nose && (nose.visibility ?? 1) > 0.5) {
+      sumX += nose.x * 2;
+      sumY += nose.y * 2;
+      weight += 2;
+    }
+
+    if (leftShoulder && (leftShoulder.visibility ?? 1) > 0.4 && 
+        rightShoulder && (rightShoulder.visibility ?? 1) > 0.4) {
+      sumX += (leftShoulder.x + rightShoulder.x) / 2;
+      sumY += (leftShoulder.y + rightShoulder.y) / 2;
+      weight += 1;
+    }
+
+    if (weight === 0) {
+      return {
+        x: (bbox.x1 + bbox.x2) / 2,
+        y: (bbox.y1 + bbox.y2) / 2
+      };
+    }
+
+    return { x: sumX / weight, y: sumY / weight };
   }
 
   static centerFromBbox(bbox) {
