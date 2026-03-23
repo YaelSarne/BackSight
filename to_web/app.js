@@ -1,5 +1,5 @@
-import { TrackManager } from "./tracker.js";
-import { Visualizer } from "./visualizer.js";
+import { TrackManager } from "./backsight-app/src/utils/tracker.js";
+import { Visualizer } from "./backsight-app/src/utils/visualizer.js";
 
 import {
   FilesetResolver,
