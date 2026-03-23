@@ -1,0 +1,47 @@
+{
+  "hero": {
+    "title": "BackSight",
+    "suffix": "AI",
+    "subtitle": "A mobile-friendly computer vision prototype designed to detect prolonged nearby presence and identify repeated reappearance.",
+    "description": "This project explores how real-time computer vision can support personal safety by monitoring nearby people over time, detecting repeated presence patterns, and issuing alerts when a person remains in the environment for unusually long periods."
+  },
+  "sections": [
+    {
+      "id": "problem",
+      "title": "Why this project matters",
+      "text": "In many situations, a person may feel uncomfortable when someone stays nearby for an extended period or repeatedly reappears. This project was created as an early-stage prototype to explore whether computer vision can help detect those patterns automatically.\n\nRather than identifying who a person is, the system focuses on behavioral presence over time: whether someone stays within range for too long, temporarily leaves, and then appears again in a similar visual form. The goal is to provide an additional layer of situational awareness."
+    },
+    {
+      "id": "features",
+      "title": "What the application does today",
+      "text": "The current version uses a computer vision pipeline to monitor people in the camera frame over time. Currently, the system can:",
+      "bullets": [
+        "Detect people in the camera’s field of view",
+        "Keep track of stay duration nearby",
+        "Store lightweight visual features for each person",
+        "Use color histogram matching for re-identification (Re-ID)",
+        "Trigger alerts based on timing and repeated-presence logic"
+      ]
+    },
+    {
+      "id": "limitations",
+      "title": "Current Challenges & Limitations",
+      "text": "As an early prototype, one main challenge is hardware placement. Relying on a phone camera makes it difficult to monitor the area behind the user naturally.\n\nIn addition, re-identification based on color histograms is a lightweight approximation. Similar clothing, lighting changes, and fast motion can affect reliability. This is a proof-of-concept, not a finished safety product."
+    },
+    {
+      "id": "future",
+      "title": "Future Direction",
+      "text": "Future versions could move beyond the phone camera to a small clip-on wearable camera better suited for continuous monitoring.",
+      "bullets": [
+        "Practical wearable camera form factors",
+        "Advanced person re-identification methods",
+        "Smart alert strategies combining movement and duration",
+        "Robust performance in dynamic outdoor environments"
+      ]
+    }
+  ],
+  "footer": {
+    "note": "This demo is intended for testing and experimentation. Results may vary depending on lighting, occlusion, and device performance.",
+    "about": "An experimental prototype exploring situational awareness through privacy-aware computer vision."
+  }
+}
