@@ -2,8 +2,20 @@ import { useRef, useState } from 'react';
 import { TrackManager } from '../utils/tracker';
 import { Visualizer } from '../utils/visualizer';
 
+const speak = (text) => {
+  if ('speechSynthesis' in window) {
+    // Stop any ongoing speech before speaking a new message
+    window.speechSynthesis.cancel(); 
+    
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'en-US'; 
+    msg.rate = 1.0; 
+    msg.volume = 1.0;
+    window.speechSynthesis.speak(msg);
+  }
+};
+
 /**
- * Custom hook for BackSight monitoring system
  * Handles the monitoring state, frame processing, and alert system
  */
 
@@ -11,6 +23,7 @@ export const useMonitoring = () => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [status, setStatus] = useState("Idle");
   const alertAudioRef = useRef(null);
+  const isMonitoringRef = useRef(false);
 
   const sentAlertsRef = useRef({});
 
@@ -40,13 +53,16 @@ export const useMonitoring = () => {
   };
 
   // main loop to process each video frame, detect poses, update tracks, and draw the results on the canvas
-  const processFrame = async (landmarker, videoRef, canvasRef) => {
-    if (!isMonitoring || !landmarker || !videoRef.current || !canvasRef.current) return;
+  const processFrame = async (landmarker, videoRef, canvasRef, thresholds) => {
+    if (!isMonitoringRef.current || !landmarker || !videoRef.current || !canvasRef.current || !thresholds) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     const tracker = trackerRef.current;
+
+    tracker.ALERT_L1 = thresholds.warning;
+    tracker.ALERT_L2 = thresholds.danger;
 
     // only process the frame if the video is ready and has advanced to a new time
     if (video.readyState >= 2 && video.currentTime !== video.lastTime) {
@@ -82,6 +98,8 @@ export const useMonitoring = () => {
 
       const matches = tracker.matchDetectionsToTracks(detections);
 
+      // useMonitoring.js
+
       for (const match of matches) {
         let color = "lime";
         let level = "NORMAL";
@@ -90,34 +108,75 @@ export const useMonitoring = () => {
           color = "red";
           level = "L2_CRITICAL";
           if (!sentAlertsRef.current[match.trackId]?.L2) {
-            logEventToBackend(match.trackId, Math.floor(match.duration), level);
+            
             if (alertAudioRef.current) {
-              alertAudioRef.current.currentTime = 0;
-              alertAudioRef.current.play().catch(e => console.log("Audio failed", e));
+              const audio = alertAudioRef.current;
+              audio.currentTime = 0;
+              
+              // speak the alert message after the audio finishes playing
+              audio.onended = () => {
+                if (isMonitoringRef.current) {
+                  speak("Alert! Someone is following you.");
+                }
+                audio.onended = null;
+              };
+              audio.play().catch(e => {
+                console.log("Audio failed, speaking immediately", e);
+                speak("Alert! Someone is following you."); 
+              });
+            } else {
+              speak("Alert! Someone is following you.");
             }
+            
+            logEventToBackend(match.trackId, Math.floor(match.duration), level);
             sentAlertsRef.current[match.trackId] = { ...sentAlertsRef.current[match.trackId], L2: true };
           }
         } else if (match.duration >= tracker.ALERT_L1) {
           color = "orange";
           level = "L1_WARNING";
           if (!sentAlertsRef.current[match.trackId]?.L1) {
+            
+            /*
+            if (alertAudioRef.current) {
+              alertAudioRef.current.currentTime = 0;
+              alertAudioRef.current.play().catch(e => console.log("Audio failed", e));
+            }
+            speak("Person detected behind you.");
+             */
+            
             logEventToBackend(match.trackId, Math.floor(match.duration), level);
             sentAlertsRef.current[match.trackId] = { ...sentAlertsRef.current[match.trackId], L1: true };
           }
         }
         Visualizer.drawPerson(ctx, match.bbox, match.trackId, match.duration, color);
       }
-
-      tracker.cleanupInactive();
-      Visualizer.drawDashboard(ctx, canvas, tracker);
     }
 
     // call with next frame
-    requestAnimationFrame(() => processFrame(landmarker, videoRef, canvasRef));
+    requestAnimationFrame(() => processFrame(landmarker, videoRef, canvasRef, thresholds));
   };
 
-  const startMonitoring = () => setIsMonitoring(true);
-  const stopMonitoring = () => setIsMonitoring(false);
+  const startMonitoring = () => {
+    isMonitoringRef.current = true;
+    setIsMonitoring(true);
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance("");
+      window.speechSynthesis.speak(utterance);
+    }
+    
+    if (alertAudioRef.current) {
+      alertAudioRef.current.play().then(() => {
+        alertAudioRef.current.pause();
+        alertAudioRef.current.currentTime = 0;
+      }).catch(() => {});
+    }
+  };
+
+  const stopMonitoring = () => {
+    isMonitoringRef.current = false;
+    setIsMonitoring(false);
+  };
 
   const setStatusMessage = (message) => setStatus(message);
 

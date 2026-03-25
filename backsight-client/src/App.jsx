@@ -14,6 +14,28 @@ import Header from './components/Header';
 
 function App() { // main React component for the BackSight web app
   const [hasLaunched, setHasLaunched] = useState(false); 
+  const [thresholds, setThresholds] = useState({
+    warning: 30, 
+    danger: 60
+  });
+
+  const updateThresholds = (key, value) => {
+    setThresholds(prev => {
+      let newWarning = prev.warning;
+      let newDanger = prev.danger;
+
+      if (key === 'warning') {
+        newWarning = Math.max(1, value);
+        if (newWarning >= newDanger) {
+          newDanger = newWarning + 2; 
+        }
+      } else if (key === 'danger') {
+        newDanger = Math.max(prev.warning + 2, value); 
+      }
+
+      return { warning: newWarning, danger: newDanger };
+    });
+  };
 
   // Initialize custom hooks
   const { initializePoseDetection, cleanup: cleanupPose } = usePoseDetection();
@@ -43,7 +65,7 @@ function App() { // main React component for the BackSight web app
 
           setStatusMessage("Running");
           console.log("System is running!");
-          processFrame(landmarker, videoRef, canvasRef); // start main loop to process frames
+          processFrame(landmarker, videoRef, canvasRef, thresholds); // start main loop to process frames
 
         } catch (err) {
           console.error(err);
@@ -67,7 +89,7 @@ function App() { // main React component for the BackSight web app
     return () => { 
       isMounted.current = false;
     };
-  }, [isMonitoring, hasLaunched]);
+  }, [isMonitoring, hasLaunched, thresholds]);
 
   const handleLaunch = () => {
     setHasLaunched(true);
@@ -92,6 +114,8 @@ function App() { // main React component for the BackSight web app
           onStart={startMonitoring}
           onStop={stopMonitoring}
           content={content}
+          thresholds={thresholds}
+          setThresholds={updateThresholds}
         />
       )}
 
