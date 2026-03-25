@@ -7,31 +7,47 @@ export class Visualizer {
     const sidebarW = isMobile ? 150 : 320;
     const now = performance.now() / 1000;
 
+    // sidebar background
     ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.fillRect(w - sidebarW, 0, sidebarW, h);
 
+    // title
     ctx.fillStyle = "white";
     ctx.font = isMobile ? "bold 14px Arial" : "bold 18px Arial";
     ctx.fillText("LIVE MONITOR", w - sidebarW + 15, 30);
 
     let y = 60;
 
+    // show empty state if there are no verified tracks
+    if (tracker.tracks.size === 0) {
+      ctx.fillStyle = "#bbb";
+      ctx.font = isMobile ? "11px Arial" : "13px Arial";
+      ctx.fillText("No people detected", w - sidebarW + 15, y);
+      return;
+    }
+
+    // draw only VERIFIED / regular tracks
     for (const [trackId, track] of tracker.tracks.entries()) {
       const duration = Math.floor(now - track.startTime);
       const timeSinceSeen = now - track.lastSeen;
 
       let color = track.visible ? "lime" : "#777";
-      
-      if (track.visible && duration >= tracker.ALERT_L2) color = "red"; // ALERT_L2 reached
-      else if (track.visible && duration >= tracker.ALERT_L1) color = "orange";  // ALERT_L1 reached
-    
+
+      if (track.visible && duration >= tracker.ALERT_L2) {
+        color = "red";
+      } else if (track.visible && duration >= tracker.ALERT_L1) {
+        color = "orange";
+      }
+
       ctx.fillStyle = color;
       ctx.font = isMobile ? "12px Arial" : "14px Arial";
-
-      const statusText = track.visible ? "VISIBLE" : `LOST (${Math.floor(tracker.GRACE_PERIOD - timeSinceSeen)}s)`;
-    
       ctx.fillText(`PERSON ${trackId} | ${duration}s`, w - sidebarW + 15, y);
+
       ctx.font = isMobile ? "10px Arial" : "11px Arial";
+      const statusText = track.visible
+        ? "VISIBLE"
+        : `LOST (${Math.max(0, Math.floor(tracker.GRACE_PERIOD - timeSinceSeen))}s)`;
+
       ctx.fillText(statusText, w - sidebarW + 15, y + 18);
 
       ctx.strokeStyle = "#333";
@@ -41,7 +57,7 @@ export class Visualizer {
       ctx.stroke();
 
       y += 50;
-      if (y > h - 40) break;
+      if (y > h - 40) return;
     }
   }
 
