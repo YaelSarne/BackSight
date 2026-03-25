@@ -28,7 +28,7 @@ export class TrackManager {
       keyPoints.reduce((sum, i) => sum + (landmarks[i]?.visibility || 0), 0) /
       keyPoints.length;
 
-    if (avgVisibility < 0.55) return null;
+    if (avgVisibility < 0.6) return null;
 
     const visible = landmarks.filter((lm) => (lm.visibility ?? 1) > 0.4);
     if (visible.length < 10) return null;
@@ -40,6 +40,14 @@ export class TrackManager {
     const y1 = Math.floor(Math.min(...ys) * frameHeight);
     const x2 = Math.floor(Math.max(...xs) * frameWidth);
     const y2 = Math.floor(Math.max(...ys) * frameHeight);
+
+    /*
+    // filter out very wide boxes that are unlikely to be people
+    const width = x2 - x1;
+    const height = y2 - y1;
+    const aspectRatio = height / width;
+    if (aspectRatio < 0.4) return null;
+    */
 
     return { x1, y1, x2, y2 };
   }
