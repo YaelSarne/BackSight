@@ -43,5 +43,27 @@
   "footer": {
     "note": "This demo is intended for testing and experimentation. Results may vary depending on lighting, occlusion, and device performance.",
     "about": "An experimental prototype exploring situational awareness through privacy-aware computer vision."
-  }
+  }, 
+  "tech_specs": [
+    {
+      "id": "anchoring",
+      "title": "Weighted Spatial Anchoring",
+      "text": "To ensure identity persistence during partial occlusion or rotation, the system implements a Weighted Bi-Point Anchor. By prioritizing the high-confidence nasal landmark and acromial axis, the tracker maintains a stable trajectory even when the subject is not facing the camera."
+    },
+    {
+      "id": "matching",
+      "title": "Deterministic Data Association",
+      "text": "The matching engine utilizes a Gated Proximity Function. Between consecutive frames, detections are mapped to existing tracks using a Euclidean distance matrix, ensuring Temporal Consistency and preventing ID-switching in crowded environments."
+    },
+    {
+      "id": "radius",
+      "title": "Adaptive Search Radii",
+      "text": "To handle rapid acceleration or temporary disappearance, the system employs an Expanding Search Radius. The matching threshold increases linearly with the time-delta since the last valid observation, mimicking an Inertial Prediction model."
+    },
+    {
+      "id": "reid",
+      "title": "Chromatic Signature Re-ID",
+      "text": "For long-term re-identification, the system extracts a 3-channel Color Histogram. If a person exits and re-enters the frame, this 'Visual Fingerprint' is cross-referenced against the historical record to maintain identity continuity."
+    }
+  ]
 }

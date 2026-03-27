@@ -1,5 +1,5 @@
 import React from 'react';
-import './DemoScreen.css';
+import '../styles/DemoScreen.css';
 
 // The main interface for the live demo
 // showing video feed, controls, and status.

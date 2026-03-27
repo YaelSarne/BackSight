@@ -4,9 +4,9 @@ export class TrackManager {
     alertL2 = 30,
     gracePeriod = 20, // seconds to keep "lost" verified tracks before removing
     maxMatchDistance = 250, // max distance in pixels to consider a detection as the same person
-    minFramesToVerify = 5, // how many matched frames a new person needs before becoming verified
-    unverifiedMaxAge = 0.4 // how long to keep an unverified track without seeing it again
-
+    minFramesToVerify = 10, // how many matched frames a new person needs before becoming verified
+    unverifiedMaxAge = 0.2,  // how long to keep an unverified track without seeing it again
+    minDurationToVerify = 0.5 // minimum duration in seconds before an unverified track can become verified (to filter out very short detections)
   } = {}) {
     this.ALERT_L1 = alertL1;
     this.ALERT_L2 = alertL2;
@@ -14,6 +14,7 @@ export class TrackManager {
     this.MAX_MATCH_DISTANCE = maxMatchDistance;
     this.MIN_FRAMES_TO_VERIFY = minFramesToVerify;
     this.UNVERIFIED_MAX_AGE = unverifiedMaxAge;
+    this.MIN_DURATION_TO_VERIFY = minDurationToVerify;
 
     this.tracks = new Map();
     this.unverifiedTracks = new Map(); // temporary tracks before verification
@@ -22,36 +23,32 @@ export class TrackManager {
   }
 
   static bboxFromLandmarks(landmarks, frameWidth, frameHeight) {
-    // 0 = nose, 11 = left shoulder, 12 = right shoulder 
-    const criticalPoints = [0, 11, 12]; 
-    // check if critical points are visible enough to consider this a valid detection
-    const criticalVis = criticalPoints.reduce((sum, i) => sum + (landmarks[i]?.visibility || 0), 0) / 3;
-    if (criticalVis < 0.4) return null;
+    // calculate average visibility of key landmarks
+    const keyPoints = [0, 11, 12, 23, 24];
+    const avgVisibility =
+      keyPoints.reduce((sum, i) => sum + (landmarks[i]?.visibility || 0), 0) /
+      keyPoints.length;
 
-    // get bounding box around all visible landmarks with some padding
-    const visible = landmarks.filter((lm) => (lm.visibility ?? 1) > 0.2);
-    if (visible.length < 6) return null;
+    if (avgVisibility < 0.7) return null;
+
+    const visible = landmarks.filter((lm) => (lm.visibility ?? 1) > 0.4);
+    if (visible.length < 7) return null;
 
     const xs = visible.map((lm) => lm.x);
     const ys = visible.map((lm) => lm.y);
 
-    let minX = Math.min(...xs);
-    let maxX = Math.max(...xs);
-    let minY = Math.min(...ys);
-    let maxY = Math.max(...ys);
+    const x1 = Math.floor(Math.min(...xs) * frameWidth);
+    const y1 = Math.floor(Math.min(...ys) * frameHeight);
+    const x2 = Math.floor(Math.max(...xs) * frameWidth);
+    const y2 = Math.floor(Math.max(...ys) * frameHeight);
 
-    // add extra padding based on shoulder width to better capture the head and upper body,
-    const shoulderWidth = Math.abs(landmarks[12].x - landmarks[11].x);
-    const headSpace = shoulderWidth * 0.5; 
-    minY = Math.min(minY, landmarks[0].y - headSpace);
-
-    const width = maxX - minX;
-    const height = maxY - minY;
-    
-    const x1 = Math.max(0, Math.floor((minX - width * 0.15) * frameWidth));
-    const y1 = Math.max(0, Math.floor((minY - height * 0.15) * frameHeight));
-    const x2 = Math.min(frameWidth, Math.floor((maxX + width * 0.15) * frameWidth));
-    const y2 = Math.min(frameHeight, Math.floor((maxY + height * 0.15) * frameHeight));
+    /*
+    // filter out very wide boxes that are unlikely to be people
+    const width = x2 - x1;
+    const height = y2 - y1;
+    const aspectRatio = height / width;
+    if (aspectRatio < 0.4) return null;
+    */
 
     return { x1, y1, x2, y2 };
   }
@@ -59,6 +56,7 @@ export class TrackManager {
   static getAnchorPoint(landmarks, bbox) {
     // weighted anchor point using nose + shoulders for more stable tracking
     // especially when the person is partially occluded or turned away from the camera
+
     const nose = landmarks[0];
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
@@ -103,6 +101,54 @@ export class TrackManager {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  static bboxMetrics(bbox) {
+    // calculate metrics like area and aspect ratio for a bounding box
+    const w = Math.max(1, bbox.x2 - bbox.x1);
+    const h = Math.max(1, bbox.y2 - bbox.y1);
+    return {w, h, area: w * h, aspect: h / w};
+  }
+
+  static bboxChangeIsReasonable(oldBbox, newBbox, lostTime = 0) {
+    // determine if the change in bounding box size/shape is reasonable for the same person
+    // especially when re-acquiring after being lost
+
+    if (!oldBbox || !newBbox) return true;
+
+    const oldM = TrackManager.bboxMetrics(oldBbox);
+    const newM = TrackManager.bboxMetrics(newBbox);
+
+    const areaRatio = newM.area / oldM.area;
+    const aspectRatio = newM.aspect / oldM.aspect;
+
+    // symmetric similarity: 1 is identical, lower = more different
+    // min with inverse to handle both increases and decreases in size/ratio
+    const areaSimilarity = Math.min(areaRatio, 1 / areaRatio);
+    const aspectSimilarity = Math.min(aspectRatio, 1 / aspectRatio);
+
+    // if the track was lost for longer, allow a bit more size change
+    const minAreaSimilarity = lostTime > 0.7 ? 0.35 : 0.5;
+    const minAspectSimilarity = 0.55;
+
+    return (
+      areaSimilarity >= minAreaSimilarity &&
+      aspectSimilarity >= minAspectSimilarity
+    );
+  }
+
+  static poseQuality(landmarks) {
+    // estimate the quality of the detected pose based on the visibility of key landmarks
+    const important = [0, 11, 12, 23, 24];
+    let visibleCount = 0;
+
+    // count how many of the important landmarks are clearly visible
+    for (const i of important) {
+      if ((landmarks[i]?.visibility ?? 0) > 0.5) {
+        visibleCount++;
+      }
+    }
+    return visibleCount;
+  }
+
   beginFrame() {
     // mark all tracks as not visible at the start of the frame
     for (const track of this.tracks.values()) {
@@ -129,6 +175,7 @@ export class TrackManager {
 
       let bestDetIdx = -1;
       const timeSinceSeen = now - track.lastSeen;
+
       const currentMaxDist =
         timeSinceSeen > 1.0
           ? this.MAX_MATCH_DISTANCE * 2
@@ -136,13 +183,29 @@ export class TrackManager {
 
       let minDistance = currentMaxDist;
 
-      // for each track, find the closest detection that hasn't been matched yet
+      // determine if this track is currently lost and trying to be re-acquired
+      const isReacquiring = timeSinceSeen > 0.35;
 
+      // for each track, find the closest detection that hasn't been matched yet
       for (let i = 0; i < detections.length; i++) {
         if (usedDetectionIndices.has(i)) continue; // skip already matched detections
 
-        const dist = TrackManager.distance(track.center, detections[i].center);
-        if (dist < minDistance) { // closer than previous best match
+        const det = detections[i];
+        const dist = TrackManager.distance(track.center, det.center);
+
+        // check if the detection is within a reasonable distance and has a reasonable size change compared to the track's reference (or last) bbox
+        const bboxReference = track.referenceBbox || track.bbox;
+        const reasonableBox = TrackManager.bboxChangeIsReasonable(
+          bboxReference,
+          det.bbox,
+          timeSinceSeen
+        );
+
+        // if the detection is close enough and has a reasonable box change, consider it as a match candidate
+        const quality = TrackManager.poseQuality(det.landmarks);
+        const strongEnough = isReacquiring ? quality >= 3 : true;
+
+        if (dist < minDistance && reasonableBox && strongEnough) {
           minDistance = dist;
           bestDetIdx = i;
         }
@@ -158,9 +221,15 @@ export class TrackManager {
         track.lastSeen = now;
         track.visible = true;
 
+        // if the pose quality of the matched detection is good, update the track's reference bbox for future re-acquisition comparisons
+        if (TrackManager.poseQuality(det.landmarks) >= 4) {
+          track.referenceBbox = det.bbox;
+          track.referenceCenter = det.center;
+        }
+
         usedDetectionIndices.add(bestDetIdx); // mark this detection as matched
 
-// add to matches for visualization
+        // add to matches for visualization
         matches.push({
           trackId,
           bbox: det.bbox,
@@ -198,21 +267,22 @@ export class TrackManager {
         track.frameCount += 1;
 
         usedDetectionIndices.add(bestDetIdx);
+        const trackDuration = now - track.startTime;
 
         // once temp track has enough stable matches, convert to verified track
-        if (track.frameCount >= this.MIN_FRAMES_TO_VERIFY) {
+        if (track.frameCount >= this.MIN_FRAMES_TO_VERIFY && trackDuration >= this.MIN_DURATION_TO_VERIFY) {
           const newTrackId = this.nextTrackId++;
-
           this.tracks.set(newTrackId, {
             id: newTrackId,
             bbox: track.bbox,
             center: track.center,
-            landmarks: track.landmarks,
-            startTime: track.startTime,
+            startTime: now, // reset start time when becoming verified to track how long we've actually been following this person
             lastSeen: now,
-            visible: true
+            visible: true,
+            referenceBbox: track.bbox,
+            referenceCenter: track.center,
+            landmarks: track.landmarks
           });
-
           this.unverifiedTracks.delete(tempId);
 
           matches.push({
@@ -241,6 +311,8 @@ export class TrackManager {
       const det = detections[i];
       const tempId = `temp_${this.tempIdCounter++}`;
 
+      if (TrackManager.poseQuality(det.landmarks) < 4) continue;
+
       this.unverifiedTracks.set(tempId, {
         id: tempId,
         bbox: det.bbox,
@@ -250,14 +322,6 @@ export class TrackManager {
         lastSeen: now,
         visible: true,
         frameCount: 1
-      });
-
-      matches.push({
-        trackId: tempId,
-        bbox: det.bbox,
-        landmarks: det.landmarks,
-        duration: 0,
-        verified: false
       });
     }
 
@@ -288,7 +352,8 @@ export class TrackManager {
     // cleanup unverified tracks quickly to filter noise
     for (const [tempId, track] of Array.from(this.unverifiedTracks.entries())) {
       const timeMissing = now - track.lastSeen;
-
+      
+      // if an unverified track hasn't been seen again within the short unverified max age, remove it
       if (timeMissing > this.UNVERIFIED_MAX_AGE) {
         this.unverifiedTracks.delete(tempId);
       }

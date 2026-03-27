@@ -97,7 +97,7 @@ function App() { // main React component for the BackSight web app
 
   return (
     <div className="App">
-      <Header content={content} />
+      <Header content={content} onLaunch={handleLaunch} />
 
       {!hasLaunched ? (
         <LandingPage 
@@ -124,6 +124,7 @@ function App() { // main React component for the BackSight web app
       </footer>
 
       <audio ref={alertAudioRef} src="/alert.wav" preload="auto" />
+      
     </div>
   );
 }
