@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-// useState is react hook for managing state. when the state changes, the component re-renders to reflect the new state
-// useRef is react hook for direct access to elements or mutable values without causing re-renders when they change
-// useEffect is react hook for performing side effects in functional components
+
 import './App.css'; 
 import content from './content.json';
 import { usePoseDetection } from './hooks/usePoseDetection';
