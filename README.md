@@ -51,8 +51,3 @@ The system is evaluated against a **Ground Truth** video library to measure:
 * **Hardware Alignment:** Currently optimized for front-facing laptop/phone cameras; future iterations will support wearable clip-on form factors.
 * **Advanced Re-ID:** Moving from color-based signatures to deep-learning feature vectors for improved performance in varied lighting conditions.
 * **Activity Recognition:** Integrating action-detection to distinguish between passive presence and suspicious movement patterns.
-
----
-
-## 📜 Disclaimer
-This project is an experimental prototype for research purposes. It is not a production-ready safety product. Results may vary depending on device capabilities, environmental lighting, and camera quality.
