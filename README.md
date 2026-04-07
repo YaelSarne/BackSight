@@ -1,7 +1,6 @@
-# 🚀 BackSight AI
+# 🚀 BackSight
 **Spatiotemporal Tracking & Behavioral Analysis System**
-BackSight moves beyond simple object detection into **Identity Persistence**. It analyzes human presence over time using deterministic tracking and lightweight re-identification to detect prolonged stay and repeated reappearance.
-
+BackSight is a privacy-aware computer vision prototype that tracks people over time to detect prolonged presence and repeated reappearance.
 ---
 
 ## 🧠 AI & Computer Vision Architecture
