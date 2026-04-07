@@ -30,14 +30,7 @@ Reconnects identities after frame exits using **Chromatic Signature Matching**:
 * **Storage:** Node.js + SQLite for persistent behavioral logging
 
 ---
-
-## 📊 Performance Highlights
-* **Edge Optimized:** Stable 30FPS in-browser via GPU offloading.
-* **Robust Tracking:** Minimized ID-swaps using spatiotemporal smoothing.
-* **Cross-Browser:** Optimized BBox interpolation for Chrome/Safari stability.
-
----
-
-## 📜 Future Research
-* Transitioning to **Deep Embedding Vectors** for robust metric-learning Re-ID.
-* Implementing **Kalman Filters** for state estimation during full occlusion.
+## 🚧 Limitations & Future Work
+* **Hardware Alignment:** Currently optimized for front-facing laptop/phone cameras; future iterations will support wearable clip-on form factors.
+* **Advanced Re-ID:** Moving from color-based signatures to deep-learning feature vectors for improved performance in varied lighting conditions.
+* **Activity Recognition:** Integrating action-detection to distinguish between passive presence and suspicious movement patterns.
