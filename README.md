@@ -1,53 +1,64 @@
-# 🚀 BackSight AI
-**Real-time Spatiotemporal Tracking & Behavioral Presence Analysis**
+# BackSight AI
 
-BackSight is a high-performance, privacy-first computer vision prototype designed to enhance situational awareness. By moving beyond simple object detection into **Temporal Identity Persistence**, the system identifies prolonged nearby presence and repeated reappearance patterns without storing sensitive biometric data.
+**Spatiotemporal tracking and behavioral presence analysis system**
 
----
-
-## 🧠 Core Engineering Challenges & Solutions
-
-### 1. Temporal Identity Persistence (The Tracking Logic)
-The system employs a **Deterministic Data Association** engine to maintain identity across frames, solving the common "ID-Switch" problem in dynamic environments.
-* **Weighted Spatial Anchoring:** Instead of simple centroid tracking, we calculate a weighted anchor based on the nasal and acromial (shoulder) landmarks. This ensures a stable trajectory even during partial occlusion or subjects turning away from the lens.
-* **Inertial Prediction Model:** To handle rapid movement or motion blur, the system uses an **Adaptive Search Radius** that expands linearly relative to the time-delta since the last valid detection.
-
-### 2. Solving "Flickering" & Transient Noise
-One of the primary challenges in browser-based CV is false positives on inanimate objects (chairs, clothing, etc.).
-* **Temporal Debouncing:** We implemented a **Multi-Stage Confidence Gating** pipeline. A candidate detection must pass a visibility threshold ($Vis > 0.75$) across a rolling window of 10 frames before being promoted to a **Verified Track**.
-* **Geometrical Filtering:** Automated rejection of detections based on **Aspect Ratio** and **Pose Quality** metrics. Detections must maintain a human-like vertical orientation to be considered valid.
-
-### 3. Cross-Browser Robustness (Chrome vs. Safari)
-The engine is optimized to handle variations in GPU/Webcam resource management between browsers. We implemented **BBox Interpolation** and adjusted visibility sensitivity to ensure consistent tracking performance regardless of the browser's internal frame-processing latency.
+BackSight is a computer vision prototype focused on tracking people over time and detecting behavioral patterns such as prolonged nearby presence and repeated reappearance.  
+Instead of relying only on frame-by-frame detection, the system maintains identity across time using tracking, filtering, and lightweight re-identification logic.
 
 ---
 
-## 🛠 Features
-- **Real-time Edge Processing:** All pose estimation and tracking happen on-device for maximum privacy and low latency.
-- **Lightweight Re-ID:** Chromatic signature matching using 3-channel color histograms to identify subjects returning to the frame after an exit.
-- **Alert Logic Engine:** Custom-built temporal thresholds (Warning/Danger) based on continuous presence duration.
-- **Responsive Telemetry Dashboard:** Live monitoring with real-time tracking statistics and system health status.
+## AI & Computer Vision Architecture
+
+### 1. Temporal Identity Persistence
+A core challenge in this project is maintaining a consistent identity across frames.  
+To address this, I implemented a deterministic tracking pipeline based on spatial matching and temporal continuity.
+
+- **Weighted Spatial Anchoring:**  
+  The tracker uses stable body landmarks, with emphasis on nose and shoulder positions, to compute a more reliable anchor point and improve stability under partial occlusion or body rotation.
+
+- **Adaptive Search Radius:**  
+  To handle motion, blur, or short disappearances, the matching radius expands over time since the last valid observation, increasing the chance of reconnecting the correct track.
+
+### 2. Signal Filtering and Verification
+To reduce false positives caused by unstable detections or non-human objects, the system applies multi-stage filtering before confirming a tracked person.
+
+- **Temporal Verification:**  
+  A candidate detection must remain sufficiently stable across multiple frames before being promoted to a verified track.
+
+- **Geometric Filtering:**  
+  Detections are filtered using pose quality and geometric constraints such as body shape consistency and key landmark confidence.
+
+### 3. Lightweight Re-Identification
+To support repeated appearance detection, the system uses a lightweight re-identification mechanism.
+
+- **Feature Extraction:**  
+  A 3-channel color histogram is extracted from each detected person.
+
+- **Track Reconnection:**  
+  When a person leaves and later re-enters the frame, the current visual signature is compared against previous tracks to reconnect identity when possible.
 
 ---
 
-## 💻 Tech Stack
-* **Frontend:** React.js (Vite), CSS3 (Responsive Layouts)
-* **AI/CV:** MediaPipe (Pose Landmarker), Custom Kalman-inspired tracking logic
-* **Backend:** Node.js (Express)
-* **Database:** SQLite (Persistent behavioral logging and session analytics)
-* **Math:** Euclidean distance metrics, Color Histogram correlation
+## Tech Stack
+
+- **Pose Estimation:** MediaPipe Pose Landmarker  
+- **Tracking Logic:** Custom heuristic-based tracker using spatial matching and temporal constraints  
+- **Frontend:** React (Vite)  
+- **Backend / Storage:** Node.js, SQLite  
 
 ---
 
-## 📊 Evaluation & Testing
-The system is evaluated against a **Ground Truth** video library to measure:
-* **ID-Switch Rate (IDSR):** Minimizing instances where a subject loses their ID to another person or object.
-* **Recovery Latency:** Speed of re-acquiring a subject after a temporary exit from the frame.
-* **False Discovery Rate (FDR):** Ensuring inanimate objects do not trigger the alert logic through rigorous visibility gating.
+## Challenges Solved
+
+- Reduced identity switching between nearby detections  
+- Improved stability under flickering and short-lived false positives  
+- Added lightweight re-identification for repeated presence detection  
+- Designed the system to run efficiently in a browser-based environment  
 
 ---
 
-## 🚧 Limitations & Future Work
-* **Hardware Alignment:** Currently optimized for front-facing laptop/phone cameras; future iterations will support wearable clip-on form factors.
-* **Advanced Re-ID:** Moving from color-based signatures to deep-learning feature vectors for improved performance in varied lighting conditions.
-* **Activity Recognition:** Integrating action-detection to distinguish between passive presence and suspicious movement patterns.
+## Future Work
+
+- Replace color histograms with embedding-based re-identification  
+- Add stronger motion prediction for full occlusion cases  
+- Improve robustness in complex real-world environments  
