@@ -1,7 +1,7 @@
 # 🚀 BackSight
 **Spatiotemporal Tracking & Behavioral Analysis System**
 -
-- BackSight is a privacy-aware computer vision prototype that tracks people over time to detect prolonged presence and repeated reappearance.
+BackSight is a privacy-aware computer vision prototype that tracks people over time to detect prolonged presence and repeated reappearance.
 ---
 
 ## 🧠 AI & Computer Vision Architecture
