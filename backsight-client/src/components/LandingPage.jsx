@@ -7,10 +7,12 @@ function LandingPage({ content, onLaunch }) {
   const limitations = content.sections.find(section => section.id === 'limitations');
   const future = content.sections.find(section => section.id === 'future');
 
+  const landing = content.landingPage || {};
+
   return (
     <div className="landing-container animate-fade-in">
       <section className="story-section story-section-intro">
-        <div className="section-kicker">The Idea</div>
+        <div className="section-kicker">{landing.ideaKicker}</div>
         <div className="section-shell">
           <div className="story-copy">
             <h2 className="section-title">{problem?.title}</h2>
@@ -18,18 +20,14 @@ function LandingPage({ content, onLaunch }) {
           </div>
 
           <div className="story-side-card highlight-card">
-            <h3>Design Goal</h3>
-            <p>
-              Build an early prototype that can monitor nearby presence over time,
-              notice repeated reappearance patterns, and surface potential discomfort
-              scenarios without relying on explicit identity recognition.
-            </p>
+            <h3>{landing.designGoal?.title}</h3>
+            <p>{landing.designGoal?.text}</p>
           </div>
         </div>
       </section>
 
       <section className="story-section">
-        <div className="section-kicker">What it does</div>
+        <div className="section-kicker">{landing.whatItDoesKicker}</div>
         <div className="section-shell">
           <div className="story-copy">
             <h2 className="section-title">{features?.title}</h2>
@@ -48,14 +46,11 @@ function LandingPage({ content, onLaunch }) {
       </section>
 
       <section className="story-section">
-        <div className="section-kicker">How it works</div>
+        <div className="section-kicker">{landing.howItWorksKicker}</div>
         <div className="section-shell stacked">
           <div className="story-copy centered-copy">
-            <h2 className="section-title">Technical Deep Dive</h2>
-            <p className="story-text narrow">
-              The prototype combines lightweight real-time tracking with re-identification logic,
-              aiming for practical responsiveness on mobile-friendly hardware rather than heavy infrastructure.
-            </p>
+            <h2 className="section-title">{landing.technicalDeepDive?.title}</h2>
+            <p className="story-text narrow">{landing.technicalDeepDive?.text}</p>
           </div>
 
           <div className="timeline-grid">
@@ -73,7 +68,7 @@ function LandingPage({ content, onLaunch }) {
       </section>
 
       <section className="story-section">
-        <div className="section-kicker">Reality check</div>
+        <div className="section-kicker">{landing.realityCheckKicker}</div>
         <div className="section-shell">
           <div className="story-copy">
             <h2 className="section-title">{limitations?.title}</h2>
@@ -81,19 +76,18 @@ function LandingPage({ content, onLaunch }) {
           </div>
 
           <div className="story-side-card danger-card">
-            <h3>Prototype Constraints</h3>
+            <h3>{landing.prototypeConstraints?.title}</h3>
             <ul className="feature-list clean-list">
-              <li>Phone placement is not ideal for always-on monitoring</li>
-              <li>Color-based Re-ID is lightweight but imperfect</li>
-              <li>Lighting, occlusion, and similar clothing reduce confidence</li>
-              <li>This is a proof-of-concept, not a finished safety system</li>
+              {landing.prototypeConstraints?.bullets?.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
             </ul>
           </div>
         </div>
       </section>
 
       <section className="story-section">
-        <div className="section-kicker">What comes next</div>
+        <div className="section-kicker">{landing.whatComesNextKicker}</div>
         <div className="section-shell">
           <div className="story-copy">
             <h2 className="section-title">{future?.title}</h2>
@@ -113,17 +107,14 @@ function LandingPage({ content, onLaunch }) {
 
       <section className="cta-panel">
         <div className="cta-copy">
-          <div className="section-kicker">Live Prototype</div>
-          <h2>Explore the monitoring flow in action</h2>
-          <p>
-            The current demo lets you test the interaction flow, system thresholds,
-            and live camera monitoring experience directly in the browser.
-          </p>
+          <div className="section-kicker">{landing.livePrototype?.kicker}</div>
+          <h2>{landing.livePrototype?.title}</h2>
+          <p>{landing.livePrototype?.text}</p>
         </div>
 
         <div className="launch-area">
           <button className="launch-btn" onClick={onLaunch}>
-            Launch Live Demo
+            {landing.livePrototype?.buttonText}
           </button>
         </div>
       </section>

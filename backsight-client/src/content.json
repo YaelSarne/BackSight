@@ -40,10 +40,40 @@
       ]
     }
   ],
+  "landingPage": {
+    "ideaKicker": "The Idea",
+    "whatItDoesKicker": "What it does",
+    "howItWorksKicker": "How it works",
+    "realityCheckKicker": "Reality check",
+    "whatComesNextKicker": "What comes next",
+    "designGoal": {
+      "title": "Design Goal",
+      "text": "Build an early prototype that can monitor nearby presence over time, notice repeated reappearance patterns, and surface potential discomfort scenarios without relying on explicit identity recognition."
+    },
+    "technicalDeepDive": {
+      "title": "Technical Deep Dive",
+      "text": "The prototype combines lightweight real-time tracking with re-identification logic, aiming for practical responsiveness on mobile-friendly hardware rather than heavy infrastructure."
+    },
+    "prototypeConstraints": {
+      "title": "Prototype Constraints",
+      "bullets": [
+        "Phone placement is not ideal for always-on monitoring",
+        "Color-based Re-ID is lightweight but imperfect",
+        "Lighting, occlusion, and similar clothing reduce confidence",
+        "This is a proof-of-concept, not a finished safety system"
+      ]
+    },
+    "livePrototype": {
+      "kicker": "Live Prototype",
+      "title": "Explore the monitoring flow in action",
+      "text": "The current demo lets you test the interaction flow, system thresholds, and live camera monitoring experience directly in the browser.",
+      "buttonText": "Launch Live Demo"
+    }
+  },
   "footer": {
     "note": "This demo is intended for testing and experimentation. Results may vary depending on lighting, occlusion, and device performance.",
     "about": "An experimental prototype exploring situational awareness through privacy-aware computer vision."
-  }, 
+  },
   "tech_specs": [
     {
       "id": "anchoring",
