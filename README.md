@@ -1,36 +1,42 @@
 # 🚀 BackSight AI
 **Spatiotemporal Tracking & Behavioral Analysis System**
-
-BackSight moves beyond frame-by-frame detection into **Identity Persistence**. It analyzes human presence over time using deterministic tracking and lightweight Re-ID to detect prolonged stay and repeated reappearance.
+BackSight moves beyond simple object detection into **Identity Persistence**. It analyzes human presence over time using deterministic tracking and lightweight re-identification to detect prolonged stay and repeated reappearance.
 
 ---
 
 ## 🧠 AI & Computer Vision Architecture
 
 ### 1. Temporal Identity Persistence
-Maintains consistent IDs in dynamic environments using a **Deterministic Data Association** engine:
-* **Weighted Spatial Anchoring:** Tracks stable landmarks (Nose/Shoulders) to maintain trajectory during partial occlusions.
-* **Inertial Prediction:** Uses an **Adaptive Search Radius** ($dt$) to handle rapid motion and motion blur.
+Maintains consistent person IDs across frames to handle dynamic environments:
+* **Weighted Spatial Anchoring:** Tracks stable body landmarks (Nose and Shoulders) to maintain a reliable trajectory even during partial occlusions.
+* **Inertial Prediction:** Uses an **Adaptive Search Radius** to reconnect tracks during rapid motion or momentary disappearances.
 
 ### 2. Signal Denoising & Gating
-Filters out **False Discoveries** (e.g., inanimate objects) via:
-* **Confidence Gating:** A 10-frame stability window for visibility ($Vis > 0.75$).
-* **Geometric Filtering:** Automated rejection based on **Aspect Ratio** and **Pose Quality** metrics.
+Filters out "ghost" detections and inanimate objects (e.g., chairs, clothing) via:
+* **Stability Gating:** A multi-frame verification window ensures a detection is persistent before promoting it to a "Verified Track."
+* **Geometric Filtering:** Automated noise rejection based on human body **Aspect Ratio** and pose confidence metrics.
 
 ### 3. Lightweight Re-Identification (Re-ID)
-Reconnects identities after frame exits using **Chromatic Signature Matching**:
-* **Feature Extraction:** 3-channel color histograms.
-* **Correlation Scoring:** Compares current visual signatures against historical records for edge-friendly Re-ID.
+Recognizes and reconnects identities after a person leaves and re-enters the frame:
+* **Visual Signatures:** Generates 3-channel color histograms from the subject's bounding box.
+* **Signature Matching:** Compares live visual data against historical records for efficient, privacy-first Re-ID on edge devices.
 
 ---
 
 ## 🛠️ Tech Stack
 * **Pose Estimation:** MediaPipe (Heavy Pose Landmarker)
-* **Tracking Logic:** Custom heuristic-based tracker (Euclidean + Geometric constraints)
-* **Storage:** Node.js + SQLite for persistent behavioral logging
+* **Tracking Logic:** Custom heuristic-based tracker (Euclidean distance + Geometric constraints)
+* **Backend & Storage:** Node.js + SQLite for persistent behavioral logging and analytics
 
 ---
-## 🚧 Limitations & Future Work
-* **Hardware Alignment:** Currently optimized for front-facing laptop/phone cameras; future iterations will support wearable clip-on form factors.
-* **Advanced Re-ID:** Moving from color-based signatures to deep-learning feature vectors for improved performance in varied lighting conditions.
-* **Activity Recognition:** Integrating action-detection to distinguish between passive presence and suspicious movement patterns.
+
+## 📊 Challenges & Optimization
+* **Edge Performance:** Achieved stable real-time processing in-browser by offloading pose estimation to the GPU.
+* **Cross-Browser Stability:** Optimized bounding box interpolation for consistent performance between Chrome and Safari.
+* **Trajectory Smoothing:** Implemented coordinate interpolation to reduce "flickering" in the visual output.
+
+---
+
+## 📜 Future Work
+* **Neural Embedding Vectors:** Moving to **Deep Metric Learning** for lighting-invariant Re-ID.
+* **Semantic Activity Recognition:** Utilizing temporal sequences to distinguish between passive presence and behavioral anomalies.
