@@ -29,7 +29,7 @@ function DemoScreen({ videoRef, canvasRef, isMonitoring, status, onBack, onStart
                 onClick={() => setThresholds('warning', thresholds.warning - 1)} 
                 className="circle-btn"
                 disabled={isMonitoring}
-              >−</button>
+              >-</button>
               
               <input 
                 type="number"
@@ -54,7 +54,7 @@ function DemoScreen({ videoRef, canvasRef, isMonitoring, status, onBack, onStart
                 onClick={() => setThresholds('danger', thresholds.danger - 1)} 
                 className="circle-btn"
                 disabled={isMonitoring}
-              >−</button>
+              >-</button>
               
               <input 
                 type="number"

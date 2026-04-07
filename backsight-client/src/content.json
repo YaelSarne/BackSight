@@ -16,7 +16,7 @@
       "title": "What the application does today",
       "text": "The current version uses a computer vision pipeline to monitor people in the camera frame over time. Currently, the system can:",
       "bullets": [
-        "Detect people in the camera’s field of view",
+        "Detect people in the camera's field of view",
         "Keep track of stay duration nearby",
         "Store lightweight visual features for each person",
         "Use color histogram matching for re-identification (Re-ID)",
